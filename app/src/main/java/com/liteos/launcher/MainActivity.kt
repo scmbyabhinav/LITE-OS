@@ -1,6 +1,7 @@
 package com.liteos.launcher
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
@@ -30,6 +31,9 @@ class MainActivity : Activity() {
     private lateinit var appGrid: GridView
     private lateinit var appAdapter: AppAdapter
     private lateinit var favoritesRow: LinearLayout
+    private lateinit var profileLabel: TextView
+    private var searchField: EditText? = null
+    private var profile: String = "balanced"
     private val allApps = mutableListOf<AppEntry>()
     private val visibleApps = mutableListOf<AppEntry>()
     private val favorites = linkedSetOf<String>()
@@ -45,6 +49,7 @@ class MainActivity : Activity() {
             View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
 
         favorites.addAll(preferences.getStringSet("favorites", emptySet()) ?: emptySet())
+        profile = preferences.getString("profile", "balanced") ?: "balanced"
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -58,6 +63,13 @@ class MainActivity : Activity() {
         }, matchWrap())
         val date = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
         root.addView(label(date, 14f, muted, false), matchWrap())
+        profileLabel = label("PROFILE: ${profile.uppercase(Locale.getDefault())}  ·  SETTINGS", 10f, muted, true).apply {
+            setPadding(0, dp(12), 0, 0)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { showProfileSettings() }
+        }
+        root.addView(profileLabel, matchWrap())
 
         val search = EditText(this).apply {
             hint = "Search apps"
@@ -73,6 +85,7 @@ class MainActivity : Activity() {
             bottomMargin = dp(14)
         }
         root.addView(search, searchParams)
+        searchField = search
 
         root.addView(label("FAVOURITES  ·  LONG-PRESS AN APP TO PIN", 10f, muted, true).apply {
             letterSpacing = 0.06f
@@ -98,7 +111,7 @@ class MainActivity : Activity() {
         }, matchWrap())
 
         appGrid = GridView(this).apply {
-            numColumns = if (resources.configuration.smallestScreenWidthDp >= 600) 6 else 4
+            numColumns = columnsForProfile()
             verticalSpacing = dp(10)
             horizontalSpacing = dp(8)
             stretchMode = GridView.STRETCH_COLUMN_WIDTH
@@ -154,7 +167,7 @@ class MainActivity : Activity() {
                     icon = info.loadIcon(pm)
                 ))
             }
-        filterApps("")
+        filterApps(searchField?.text?.toString().orEmpty())
         renderFavorites()
     }
 
@@ -192,6 +205,33 @@ class MainActivity : Activity() {
             ).apply { marginEnd = dp(8) }
             favoritesRow.addView(shortcut, params)
         }
+    }
+
+    private fun columnsForProfile(): Int {
+        val tablet = resources.configuration.smallestScreenWidthDp >= 600
+        return when (profile) {
+            "low_memory" -> if (tablet) 5 else 4
+            "performance" -> if (tablet) 7 else 5
+            else -> if (tablet) 6 else 4
+        }
+    }
+
+    private fun showProfileSettings() {
+        val options = arrayOf("Low Memory", "Balanced", "Performance")
+        val values = arrayOf("low_memory", "balanced", "performance")
+        val selected = values.indexOf(profile).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle("LITEOS launcher profile")
+            .setSingleChoiceItems(options, selected) { dialog, which ->
+                profile = values[which]
+                preferences.edit().putString("profile", profile).apply()
+                profileLabel.text = "PROFILE: ${profile.uppercase(Locale.getDefault())}  ·  SETTINGS"
+                appGrid.numColumns = columnsForProfile()
+                appAdapter.notifyDataSetChanged()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
 
     private fun toggleFavorite(item: AppEntry) {
@@ -252,7 +292,8 @@ class MainActivity : Activity() {
                 scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
                 contentDescription = item.label
             }
-            cell.addView(iconView, LinearLayout.LayoutParams(dp(38), dp(38)))
+            val iconSize = if (profile == "low_memory") 32 else 38
+            cell.addView(iconView, LinearLayout.LayoutParams(dp(iconSize), dp(iconSize)))
             cell.addView(label(
                 (if (favorites.contains(item.key)) "★ " else "") + item.label,
                 11f, ink, false
