@@ -15,6 +15,10 @@ android {
         versionName = "0.1.0"
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -34,4 +38,8 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
 }
