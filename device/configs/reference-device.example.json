@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "status": "template",
+  "manufacturer": "REPLACE_WITH_MANUFACTURER",
+  "model": "REPLACE_WITH_EXACT_MODEL",
+  "codename": "REPLACE_WITH_DEVICE_CODENAME",
+  "soc": {
+    "vendor": "REPLACE_WITH_SOC_VENDOR",
+    "model": "REPLACE_WITH_SOC_MODEL",
+    "architecture": "arm64"
+  },
+  "memory": {
+    "ram_gb": 2,
+    "storage_gb": 32
+  },
+  "android_baseline": {
+    "version": "REPLACE_WITH_VERSION",
+    "build_fingerprint": "REPLACE_WITH_FINGERPRINT"
+  },
+  "boot": {
+    "bootloader_unlockable": false,
+    "ab_partitions": null,
+    "dynamic_partitions": null,
+    "recovery_method": "NOT_VALIDATED"
+  },
+  "sources": {
+    "kernel_url": null,
+    "device_tree_url": null,
+    "vendor_firmware_notes": "RESEARCH_REQUIRED",
+    "license_review": "PENDING"
+  },
+  "validation": {
+    "boot": "NOT_TESTED",
+    "display_touch": "NOT_TESTED",
+    "connectivity": "NOT_TESTED",
+    "audio_camera": "NOT_TESTED",
+    "sensors_biometrics": "NOT_TESTED",
+    "encryption": "NOT_TESTED",
+    "updates": "NOT_TESTED",
+    "recovery_rollback": "NOT_TESTED",
+    "security_review": "NOT_TESTED"
+  }
+}
