@@ -34,6 +34,12 @@ This milestone is a launcher application, not firmware.
 
 ## 0.3 — Performance and compatibility lab
 
+- Read-only device capability detection (RAM, low-RAM classification, Android API, screen class, CPU ABIs and available SoC model)
+- Automatic low-memory/balanced profile selection with manual override
+- Shared device-port and platform-layer contracts documented in `platform/` and `device/`
+
+
+
 - Define low-end, mainstream and high-end device classes
 - Measure cold start, idle memory, app launch latency, battery impact and storage
 - Test under memory pressure and low storage
