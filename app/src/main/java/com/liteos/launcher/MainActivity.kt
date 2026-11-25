@@ -64,7 +64,7 @@ class MainActivity : Activity() {
             setHintTextColor(muted)
             setTextColor(ink)
             textSize = 15f
-            singleLine = true
+            setSingleLine(true)
             setPadding(dp(14), dp(9), dp(14), dp(9))
             background = rounded(tileColor, 14)
         }
