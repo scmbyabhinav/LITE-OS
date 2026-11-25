@@ -33,7 +33,8 @@ class MainActivity : Activity() {
     private lateinit var favoritesRow: LinearLayout
     private lateinit var profileLabel: TextView
     private var searchField: EditText? = null
-    private var profile: String = "balanced"
+    private var profile: String = LITEOSProfileResolver.AUTO
+    private lateinit var deviceCapabilities: DeviceCapabilities
     private val allApps = mutableListOf<AppEntry>()
     private val visibleApps = mutableListOf<AppEntry>()
     private val favorites = linkedSetOf<String>()
@@ -49,7 +50,8 @@ class MainActivity : Activity() {
             View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
 
         favorites.addAll(preferences.getStringSet("favorites", emptySet()) ?: emptySet())
-        profile = preferences.getString("profile", "balanced") ?: "balanced"
+        profile = preferences.getString("profile", LITEOSProfileResolver.AUTO) ?: LITEOSProfileResolver.AUTO
+        deviceCapabilities = DeviceCapabilities.detect(this)
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -63,7 +65,7 @@ class MainActivity : Activity() {
         }, matchWrap())
         val date = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
         root.addView(label(date, 14f, muted, false), matchWrap())
-        profileLabel = label("PROFILE: ${profile.uppercase(Locale.getDefault())}  ·  SETTINGS", 10f, muted, true).apply {
+        profileLabel = label(profileSummary(), 10f, muted, true).apply {
             setPadding(0, dp(12), 0, 0)
             isClickable = true
             isFocusable = true
@@ -207,9 +209,21 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun effectiveProfile() = LITEOSProfileResolver.resolve(profile, deviceCapabilities)
+
+    private fun profileSummary(): String {
+        val requested = profile.uppercase(Locale.getDefault())
+        val effective = effectiveProfile().replace("_", " ").uppercase(Locale.getDefault())
+        return if (profile == LITEOSProfileResolver.AUTO) {
+            "PROFILE: AUTO → $effective  ·  SETTINGS"
+        } else {
+            "PROFILE: $requested  ·  SETTINGS"
+        }
+    }
+
     private fun columnsForProfile(): Int {
-        val tablet = resources.configuration.smallestScreenWidthDp >= 600
-        return when (profile) {
+        val tablet = deviceCapabilities.isTablet
+        return when (effectiveProfile()) {
             "low_memory" -> if (tablet) 5 else 4
             "performance" -> if (tablet) 7 else 5
             else -> if (tablet) 6 else 4
@@ -217,15 +231,20 @@ class MainActivity : Activity() {
     }
 
     private fun showProfileSettings() {
-        val options = arrayOf("Low Memory", "Balanced", "Performance")
-        val values = arrayOf("low_memory", "balanced", "performance")
+        val options = arrayOf("Automatic (recommended)", "Low Memory", "Balanced", "Performance")
+        val values = arrayOf(
+            LITEOSProfileResolver.AUTO,
+            LITEOSProfileResolver.LOW_MEMORY,
+            LITEOSProfileResolver.BALANCED,
+            LITEOSProfileResolver.PERFORMANCE
+        )
         val selected = values.indexOf(profile).coerceAtLeast(0)
         AlertDialog.Builder(this)
             .setTitle("LITEOS launcher profile")
             .setSingleChoiceItems(options, selected) { dialog, which ->
                 profile = values[which]
                 preferences.edit().putString("profile", profile).apply()
-                profileLabel.text = "PROFILE: ${profile.uppercase(Locale.getDefault())}  ·  SETTINGS"
+                profileLabel.text = profileSummary()
                 appGrid.numColumns = columnsForProfile()
                 appAdapter.notifyDataSetChanged()
                 dialog.dismiss()
@@ -292,7 +311,7 @@ class MainActivity : Activity() {
                 scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
                 contentDescription = item.label
             }
-            val iconSize = if (profile == "low_memory") 32 else 38
+            val iconSize = if (effectiveProfile() == LITEOSProfileResolver.LOW_MEMORY) 32 else 38
             cell.addView(iconView, LinearLayout.LayoutParams(dp(iconSize), dp(iconSize)))
             cell.addView(label(
                 (if (favorites.contains(item.key)) "★ " else "") + item.label,
