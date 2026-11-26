@@ -40,6 +40,9 @@ jobs:
         with:
           gradle-version: "8.9"
 
+      - name: Validate AOSP product structure
+        run: bash scripts/validate-aosp-product.sh
+
       - name: Run unit tests
         run: gradle --no-daemon --stacktrace testDebugUnitTest
 
