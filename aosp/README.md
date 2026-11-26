@@ -24,17 +24,30 @@ The initial integration target is an x86_64 Android emulator product:
 - Variant: `userdebug`
 - Product definition: `vendor/liteos/products/liteos_x86_64.mk`
 - Registration: `vendor/liteos/products/AndroidProducts.mk`
-- Shared properties: `aosp/product/liteos_common.mk`
+- Shared properties: `vendor/liteos/product/liteos_common.mk`
 
-After copying/overlaying the LITEOS files into an AOSP checkout, the intended build setup is:
+This is a software integration and boot-validation target, **not** a physical handset port. The Android source tree must contain the upstream `sdk_phone_x86_64` product.
+
+## Apply the overlay
+
+From this repository, point the script at an already-synced AOSP checkout. It checks that the target is an AOSP tree and that the x86_64 base product exists. It is safe to re-run: identical files are skipped and conflicting files are never overwritten.
+
+Preview first:
 
 ```bash
-source build/envsetup.sh
-lunch liteos_x86_64-userdebug
-m
+bash scripts/apply-aosp-overlay.sh --dry-run /path/to/aosp
 ```
 
-The product inherits AOSP's emulator base. It is a software integration and boot-validation target, **not** a physical handset port. The Android source tree must contain the upstream `sdk_phone_x86_64` product.
+Apply:
+
+```bash
+bash scripts/apply-aosp-overlay.sh /path/to/aosp
+cd /path/to/aosp
+source build/envsetup.sh
+lunch liteos_x86_64-userdebug
+```
+
+The script copies only the three LITEOS product files. It does not sync AOSP, modify upstream files, run lunch, or build an image. Product parsing and build validation must happen inside the real AOSP checkout.
 
 ## Build capacity and CI policy
 
@@ -60,8 +73,9 @@ Google's current AOSP setup guidance lists a 64-bit x86 Linux host, at least 400
 | Adaptive profile resolver | Implemented; JVM unit tests pass in CI |
 | Shared platform/device contracts | Documented |
 | AOSP upstream selection | `android-latest-release` |
-| LITEOS common product properties | Added |
+| LITEOS common product properties | Added; SELinux/property-context integration still needs validation |
 | x86_64 emulator product definition | Added; not yet parsed by AOSP |
+| Overlay application script | Added; repository validation only |
 | AOSP source sync | Not performed |
 | AOSP product build | Not performed |
 | Device-specific ROM | Not implemented |
@@ -69,8 +83,9 @@ Google's current AOSP setup guidance lists a 64-bit x86 Linux host, at least 400
 
 ## Next gates
 
-1. Overlay these files into an AOSP checkout and validate the product registration with the real build system.
-2. Build and boot the x86_64 emulator image.
-3. Integrate the LITEOS launcher as a properly signed/prebuilt or source-built system app.
-4. Select one physical reference device for the first hardware port.
-5. Add image validation, signing, recovery and rollback tests before publishing any flashable artifact.
+1. Apply the overlay to a real AOSP checkout and validate product registration with the build system.
+2. Resolve any product/property namespace and SELinux policy requirements.
+3. Build and boot the x86_64 emulator image.
+4. Integrate the LITEOS launcher as a properly signed/prebuilt or source-built system app.
+5. Select one physical reference device for the first hardware port.
+6. Add image validation, signing, recovery and rollback tests before publishing any flashable artifact.
